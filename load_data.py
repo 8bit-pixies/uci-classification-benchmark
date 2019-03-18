@@ -1,5 +1,7 @@
 import pandas as pd
 from sklearn.linear_model import SGDClassifier
+import lightgbm as lgb
+from sklearn.metrics import accuracy_score
 
 meta_data = [{'dataset': 'adult', 'nclass': 2, 'label': 'income'},
  {'dataset': 'covtype', 'nclass': 7, 'label': 'X55'},
@@ -23,10 +25,28 @@ def load_data(name, subset='train'):
     return X, y
 
 if __name__ == '__main__':
-    X, y = load_data('adult')
-    X_test, y_test = load_data('adult', 'test')
+    name = 'adult'
+    name = 'dna'
+    X, y = load_data(name)
+    X_test, y_test = load_data(name, 'test')
     model = SGDClassifier(tol=1e-3, max_iter=1000)
     model.fit(X, y)
-    model.score(X, y)
-    model.score(X_test, y_test)
+    print(model.score(X, y))
+    print(model.score(X_test, y_test))
+
+    print("\nTraining LightGBM")
+    meta = [x for x in meta_data if x['dataset'] == name][0]
+    objective = "binary" if meta['nclass'] == 2 else 'multiclass'
+    gbm_config = dict(
+        boosting_type = 'gbdt',
+        objective="binary",
+        num_leaves=256,
+        n_estimators=10
+    )
+
+    gbm = lgb.LGBMClassifier(**gbm_config)
+    gbm.fit(X, y)
+    print(accuracy_score(y, model.predict(X)))
+    print(accuracy_score(y_test, model.predict(X_test)))
+
 
